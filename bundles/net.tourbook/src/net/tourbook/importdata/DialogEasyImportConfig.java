@@ -239,6 +239,7 @@ public class DialogEasyImportConfig extends TitleAreaDialog {
    private Button            _chkIC_ImportFiles;
    private Button            _chkIC_TurnOffWatching;
    private Button            _chkIL_AdjustTemperature;
+   private Button            _chkIL_RetrieveWeatherData;
    private Button            _chkIL_SaveTour;
    private Button            _chkIL_ShowInDashboard;
    private Button            _chkIL_SetLastMarker;
@@ -1846,6 +1847,7 @@ public class DialogEasyImportConfig extends TitleAreaDialog {
          createUI_550_IL_TourType(group);
          createUI_580_IL_LastMarker(group);
          createUI_590_IL_AdjustTemperature(group);
+         createUI_591_IL_RetrieveWeatherData(group);
          createUI_599_IL_Save(group);
       }
    }
@@ -2400,6 +2402,23 @@ public class DialogEasyImportConfig extends TitleAreaDialog {
       }
    }
 
+   private void createUI_591_IL_RetrieveWeatherData(final Composite parent) {
+
+      /*
+       * Checkbox: Retrieve Weather Data
+       */
+      _chkIL_RetrieveWeatherData = new Button(parent, SWT.CHECK);
+      _chkIL_RetrieveWeatherData.setText(Messages.Dialog_ImportConfig_Checkbox_RetrieveWeatherData);
+      _chkIL_RetrieveWeatherData.setToolTipText(Messages.Dialog_ImportConfig_Checkbox_RetrieveWeatherData_Tooltip);
+      _chkIL_RetrieveWeatherData.addSelectionListener(_defaultModify_Listener);
+      GridDataFactory
+            .fillDefaults()//
+            .span(2, 1)
+            .indent(0, 5)
+            .applyTo(_chkIL_RetrieveWeatherData);
+
+   }
+
    private void createUI_599_IL_Save(final Composite parent) {
 
       {
@@ -2693,6 +2712,7 @@ public class DialogEasyImportConfig extends TitleAreaDialog {
       defineColumnIL_20_ColorImage();
       defineColumnIL_30_LastMarkerDistance();
       defineColumnIL_40_AdjustTemperature();
+      defineColumnIL_50_RetrieveWeatherData();
       defineColumnIL_88_IsSaveTour();
       defineColumnIL_90_ShowInDashboard();
       defineColumnIL_99_Description();
@@ -2918,7 +2938,7 @@ public class DialogEasyImportConfig extends TitleAreaDialog {
 
       colDef.setLabelProvider(new CellLabelProvider() {
 
-         // !!! set dummy label provider, otherwise an error occures !!!
+         // !!! set dummy label provider, otherwise an error occurs !!!
          @Override
          public void update(final ViewerCell cell) {}
       });
@@ -3002,6 +3022,35 @@ public class DialogEasyImportConfig extends TitleAreaDialog {
 
                cell.setText(UI.EMPTY_STRING);
             }
+         }
+      });
+   }
+
+   /**
+    * Column: Retrieve weather data
+    */
+   private void defineColumnIL_50_RetrieveWeatherData() {
+
+      final TableColumnDefinition colDef = new TableColumnDefinition(_ilColumnManager, "isRetrieveWeatherData", SWT.CENTER); //$NON-NLS-1$
+
+      colDef.setColumnLabel(Messages.Dialog_ImportConfig_Column_RetrieveWeatherData_Label);
+      colDef.setColumnHeaderText(Messages.Dialog_ImportConfig_Column_RetrieveWeatherData_Header);
+      colDef.setColumnHeaderToolTipText(Messages.Dialog_ImportConfig_Checkbox_RetrieveWeatherData_Tooltip);
+
+      colDef.setDefaultColumnWidth(_pc.convertWidthInCharsToPixels(7));
+      colDef.setColumnWeightData(new ColumnWeightData(7));
+
+      colDef.setIsDefaultColumn();
+
+      colDef.setLabelProvider(new CellLabelProvider() {
+         @Override
+         public void update(final ViewerCell cell) {
+
+            final ImportLauncher importLauncher = (ImportLauncher) cell.getElement();
+            cell.setText(
+                  importLauncher.isRetrieveWeatherData
+                        ? Messages.App_Label_BooleanYes
+                        : Messages.App_Label_BooleanNo);
          }
       });
    }
@@ -3142,8 +3191,10 @@ public class DialogEasyImportConfig extends TitleAreaDialog {
       final boolean isILSelected = _selectedIL != null;
       final boolean isLastMarkerSelected = isILSelected && _chkIL_SetLastMarker.getSelection();
       final boolean isAdjustTemperature = isILSelected && _chkIL_AdjustTemperature.getSelection();
+      final boolean isRetrieveWeatherData = _prefStore.getBoolean(ITourbookPreferences.WEATHER_USE_WEATHER_RETRIEVAL) &&
+            !_prefStore.getString(ITourbookPreferences.WEATHER_API_KEY).equals(""); //$NON-NLS-1$
 
-      boolean isSetTourType = false;
+      boolean isSetTourType = isILSelected && _chkIL_SetTourType.getSelection();
 
       if (isILSelected) {
 
@@ -3240,6 +3291,9 @@ public class DialogEasyImportConfig extends TitleAreaDialog {
       _lblIL_TemperatureAdjustmentDuration_Unit.setEnabled(isAdjustTemperature);
       _spinnerIL_AvgTemperature.setEnabled(isAdjustTemperature);
       _spinnerIL_TemperatureAdjustmentDuration.setEnabled(isAdjustTemperature);
+
+      // Retrieve weather data
+      _chkIL_RetrieveWeatherData.setEnabled(isRetrieveWeatherData);
 
       _ilViewer.getTable().setEnabled(isLauncherAvailable);
 
@@ -3783,6 +3837,7 @@ public class DialogEasyImportConfig extends TitleAreaDialog {
       // create new tt item
       final ImportLauncher newTTItem = new ImportLauncher();
 
+      newTTItem.isSetTourType = true;
       newTTItem.tourTypeConfig = TourTypeConfig.TOUR_TYPE_CONFIG_ONE_FOR_ALL;
       newTTItem.oneTourType = tourType;
       newTTItem.name = tourType.getName();
@@ -3829,8 +3884,12 @@ public class DialogEasyImportConfig extends TitleAreaDialog {
       _selectedIL.temperatureAdjustmentDuration = _spinnerIL_TemperatureAdjustmentDuration.getSelection();
       _selectedIL.tourAvgTemperature = UI.convertTemperatureToMetric(_spinnerIL_AvgTemperature.getSelection());
 
+      _selectedIL.isRetrieveWeatherData = _chkIL_RetrieveWeatherData.getSelection();
+
       _selectedIL.isSaveTour = _chkIL_SaveTour.getSelection();
       _selectedIL.isShowInDashboard = _chkIL_ShowInDashboard.getSelection();
+
+      _selectedIL.isSetTourType = _chkIL_SetTourType.getSelection();
 
       // update UI
       _ilViewer.update(_selectedIL, null);
@@ -4258,6 +4317,7 @@ public class DialogEasyImportConfig extends TitleAreaDialog {
       // tour type
       final Enum<TourTypeConfig> selectedTourTypeConfig = getSelectedTourTypeConfig();
       _selectedIL.tourTypeConfig = selectedTourTypeConfig;
+      _selectedIL.isSetTourType = _chkIL_SetTourType.getSelection();
 
       /*
        * Set tour type data
@@ -4429,7 +4489,10 @@ public class DialogEasyImportConfig extends TitleAreaDialog {
          _spinnerIL_TemperatureAdjustmentDuration.setSelection(_selectedIL.temperatureAdjustmentDuration);
          updateUI_TemperatureAdjustmentDuration();
 
-         _chkIL_SetTourType.setSelection(isSetTourType);
+         // Retrieve Weather Data
+         _chkIL_RetrieveWeatherData.setSelection(_selectedIL.isRetrieveWeatherData);
+
+         _chkIL_SetTourType.setSelection(_selectedIL.isSetTourType);
          if (isSetTourType) {
             _comboIL_TourType.select(getTourTypeConfigIndex(tourTypeConfig));
          }

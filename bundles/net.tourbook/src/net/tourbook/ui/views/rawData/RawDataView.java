@@ -296,12 +296,13 @@ public class RawDataView extends ViewPart implements ITourProviderAll, ITourView
       HREF_ACTION_SETUP_EASY_IMPORT = HREF_TOKEN + ACTION_SETUP_EASY_IMPORT + HREF_TOKEN;
    }
 
+   private static boolean                 _isStopWatchingStoresThread;
    //
-   private final IPreferenceStore         _prefStore                 = TourbookPlugin.getPrefStore();
-   private final IPreferenceStore         _prefStoreCommon           = CommonActivator.getPrefStore();
-   private final IDialogSettings          _state                     = TourbookPlugin.getState(ID);
+   private final IPreferenceStore         _prefStore                      = TourbookPlugin.getPrefStore();
+   private final IPreferenceStore         _prefStoreCommon                = CommonActivator.getPrefStore();
+   private final IDialogSettings          _state                          = TourbookPlugin.getState(ID);
    //
-   private RawDataManager                 _rawDataMgr                = RawDataManager.getInstance();
+   private RawDataManager                 _rawDataMgr                     = RawDataManager.getInstance();
    private TableViewer                    _tourViewer;
    private TableViewerTourInfoToolTip     _tourInfoToolTip;
    private ColumnManager                  _columnManager;
@@ -351,8 +352,8 @@ public class RawDataView extends ViewPart implements ITourProviderAll, ITourView
    protected TourPerson                   _activePerson;
    protected TourPerson                   _newActivePerson;
    //
-   protected boolean                      _isPartVisible             = false;
-   protected boolean                      _isViewerPersonDataDirty   = false;
+   protected boolean                      _isPartVisible                  = false;
+   protected boolean                      _isViewerPersonDataDirty        = false;
    //
    private final NumberFormat             _nf1;
    private final NumberFormat             _nf3;
@@ -383,7 +384,6 @@ public class RawDataView extends ViewPart implements ITourProviderAll, ITourView
    private Thread                 _watchingStoresThread;
    private Thread                 _watchingFolderThread;
    private WatchService           _folderWatcher;
-   private boolean                _isStopWatchingStoresThread;
    private AtomicBoolean          _isWatchingStores           = new AtomicBoolean();
    private AtomicBoolean          _isDeviceStateUpdateDelayed = new AtomicBoolean();
    private ReentrantLock          WATCH_LOCK                  = new ReentrantLock();
@@ -419,6 +419,7 @@ public class RawDataView extends ViewPart implements ITourProviderAll, ITourView
    private String                 _imageUrl_SerialPort_Configured;
    private String                 _imageUrl_SerialPort_Directly;
    private String                 _imageUrl_State_AdjustTemperature;
+   private String                 _imageUrl_State_RetrieveWeatherData;
    private String                 _imageUrl_State_Error;
    private String                 _imageUrl_State_OK;
    private String                 _imageUrl_State_MovedFiles;
@@ -640,6 +641,10 @@ public class RawDataView extends ViewPart implements ITourProviderAll, ITourView
 
       @Override
       public void inputChanged(final Viewer v, final Object oldInput, final Object newInput) {}
+   }
+
+   public static boolean isStopWatchingStoresThread() {
+      return _isStopWatchingStoresThread;
    }
 
    private void action_Easy_SetDeviceWatching_OnOff() {
@@ -1920,6 +1925,15 @@ public class RawDataView extends ViewPart implements ITourProviderAll, ITourView
          }
       }
 
+      // retrieve weather data
+      {
+         sb.append(UI.NEW_LINE);
+
+         sb.append(importLauncher.isRetrieveWeatherData
+               ? Messages.Import_Data_HTML_RetrieveWeatherData_Yes
+               : Messages.Import_Data_HTML_RetrieveWeatherData_No);
+      }
+
       // save tour
       {
          sb.append(UI.NEW_LINE);
@@ -1966,6 +1980,17 @@ public class RawDataView extends ViewPart implements ITourProviderAll, ITourView
       }
 
       /*
+       * Retrieve Weather Data
+       */
+      String htmlRetrieveWeatherData = UI.EMPTY_STRING;
+      if (importTile.isRetrieveWeatherData) {
+
+         final String stateImage = createHTML_BgImage(_imageUrl_State_RetrieveWeatherData);
+
+         htmlRetrieveWeatherData = createHTML_TileAnnotation(stateImage);
+      }
+
+      /*
        * Marker
        */
       String htmlLastMarker = UI.EMPTY_STRING;
@@ -1993,6 +2018,7 @@ public class RawDataView extends ViewPart implements ITourProviderAll, ITourView
       sb.append(htmlDeleteFiles);
       sb.append(htmlSaveTour);
       sb.append(htmlAdjustTemperature);
+      sb.append(htmlRetrieveWeatherData);
       sb.append(htmlLastMarker);
 
       sb.append("<div style='float:left;'>" + importTile.name + "</div>"); //$NON-NLS-1$ //$NON-NLS-2$
@@ -2236,6 +2262,7 @@ public class RawDataView extends ViewPart implements ITourProviderAll, ITourView
          _imageUrl_SerialPort_Directly = getIconUrl(Messages.Image__RawData_TransferDirect);
 
          _imageUrl_State_AdjustTemperature = getIconUrl(Messages.Image__State_AdjustTemperature);
+         _imageUrl_State_RetrieveWeatherData = getIconUrl(Messages.Image__State_RetrieveWeatherData);
          _imageUrl_State_Error = getIconUrl(Messages.Image__State_Error);
          _imageUrl_State_OK = getIconUrl(Messages.Image__State_OK);
          _imageUrl_State_MovedFiles = getIconUrl(Messages.Image__State_MovedTour);
@@ -3885,7 +3912,7 @@ public class RawDataView extends ViewPart implements ITourProviderAll, ITourView
              * set transparency
              */
             final ImageData imageData = tempImage.getImageData();
-            imageData.transparentPixel = imageData.getPixel(0, 0);
+            imageData.transparentPixel = imageData.palette.getPixel(TourType.TRANSPARENT_COLOR);
 
             image = new Image(display, imageData);
          }
@@ -3918,7 +3945,7 @@ public class RawDataView extends ViewPart implements ITourProviderAll, ITourView
                 * set transparency
                 */
                final ImageData imageData = tempImage.getImageData();
-               imageData.transparentPixel = imageData.getPixel(0, 0);
+               imageData.transparentPixel = imageData.palette.getPixel(TourType.TRANSPARENT_COLOR);
 
                image = new Image(display, imageData);
 
@@ -4699,6 +4726,13 @@ public class RawDataView extends ViewPart implements ITourProviderAll, ITourView
             runEasyImport_005_AdjustTemperature(importLauncher, importedTours);
          }
 
+         /*
+          * 6. Retrieve weather data
+          */
+         if (importLauncher.isRetrieveWeatherData) {
+            runEasyImport_006_RetrieveWeatherData(importLauncher, importedTours);
+         }
+
          ArrayList<TourData> importedAndSavedTours;
 
          /*
@@ -4753,6 +4787,10 @@ public class RawDataView extends ViewPart implements ITourProviderAll, ITourView
 
             selectFirstTour();
          }
+      }
+
+      if (RawDataManager.isIgnoreInvalidFile()) {
+         _rawDataMgr.clearInvalidFilesList();
       }
    }
 
@@ -4837,6 +4875,21 @@ public class RawDataView extends ViewPart implements ITourProviderAll, ITourView
          }
 
          TourManager.adjustTemperature(tourData, durationTime);
+      }
+   }
+
+   private void runEasyImport_006_RetrieveWeatherData(final ImportLauncher importLauncher,
+                                                      final ArrayList<TourData> importedTours) {
+
+      TourLogManager.addLog(
+            TourLogState.DEFAULT,
+            NLS.bind(EasyImportManager.LOG_EASY_IMPORT_006_RETRIEVE_WEATHER_DATA,
+                  new Object[] {
+                        getDurationText(importLauncher),
+                        UI.UNIT_LABEL_TEMPERATURE }));
+
+      for (final TourData tourData : importedTours) {
+         TourManager.retrieveWeatherData(tourData);
       }
    }
 
@@ -5444,7 +5497,7 @@ public class RawDataView extends ViewPart implements ITourProviderAll, ITourView
 
                   monitor.beginTask(Messages.Import_Data_Task_CloseDeviceInfo, IProgressMonitor.UNKNOWN);
 
-                  final int waitingTime = 10000;
+                  final int waitingTime = 5000; // in ms
 
                   _watchingStoresThread.join(waitingTime);
 
@@ -5454,15 +5507,9 @@ public class RawDataView extends ViewPart implements ITourProviderAll, ITourView
 
                      _watchingStoresThread.interrupt();
 
-                     Display.getDefault().asyncExec(new Runnable() {
-                        @Override
-                        public void run() {
-
-                           StatusUtil.showInfo(NLS.bind(//
-                                 Messages.Import_Data_Task_CloseDeviceInfo_CannotClose,
-                                 waitingTime / 1000));
-                        }
-                     });
+                     StatusUtil.logInfo(NLS.bind(
+                           Messages.Import_Data_Task_CloseDeviceInfo_CannotClose,
+                           waitingTime / 1000));
                   }
 
                } catch (final InterruptedException e) {
@@ -5510,8 +5557,7 @@ public class RawDataView extends ViewPart implements ITourProviderAll, ITourView
 
                         final boolean isCheckFiles = _isDeviceStateValid == false;
 
-                        final DeviceImportState importState = EasyImportManager.getInstance()//
-                              .checkImportedFiles(isCheckFiles);
+                        final DeviceImportState importState = EasyImportManager.getInstance().checkImportedFiles(isCheckFiles);
 
                         if (importState.areTheSameStores == false || isCheckFiles) {
 

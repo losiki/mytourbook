@@ -50,8 +50,6 @@ import java.text.NumberFormat;
 import java.time.ZonedDateTime;
 import java.util.ArrayList;
 
-import javax.inject.Inject;
-
 import net.tourbook.application.TourbookPlugin;
 import net.tourbook.common.time.TimeTools;
 import net.tourbook.common.util.ColumnDefinition;
@@ -72,7 +70,6 @@ import org.eclipse.core.runtime.IStatus;
 import org.eclipse.core.runtime.Path;
 import org.eclipse.core.runtime.Status;
 import org.eclipse.core.runtime.jobs.Job;
-import org.eclipse.e4.ui.services.IStylingEngine;
 import org.eclipse.jface.action.ToolBarManager;
 import org.eclipse.jface.dialogs.IDialogSettings;
 import org.eclipse.jface.dialogs.IInputValidator;
@@ -146,11 +143,7 @@ import org.geotools.data.ows.WMSRequest;
 
 public class PrefPage_Map2_Providers extends PreferencePage implements IWorkbenchPreferencePage, ITourViewer {
 
-// SET_FORMATTING_OFF
-
-   private static final String APP_TRUE   = net.tourbook.Messages.App__True;
-
-// SET_FORMATTING_ON
+   private static final String           APP_TRUE   = net.tourbook.Messages.App__True;
 
    public static final String            ID         = "de.byteholder.geoclipse.preferences.PrefPage_Map2_Providers";                          //$NON-NLS-1$
 
@@ -249,10 +242,6 @@ public class PrefPage_Map2_Providers extends PreferencePage implements IWorkbenc
    private ActionRefreshOfflineInfoNotAssessed _actionRefreshNotAssessed;
 
    private PixelConverter                      _pc;
-
-// IStylingEngine is injected
-   @Inject
-   IStylingEngine engine;
 
    /*
     * UI controls
@@ -3017,7 +3006,7 @@ public class PrefPage_Map2_Providers extends PreferencePage implements IWorkbenc
          try {
 
             // create temp file name
-            final java.nio.file.Path tempFile = Files.createTempFile("MapProvider_", XML_EXTENSION);
+            final java.nio.file.Path tempFile = Files.createTempFile("MapProvider_", XML_EXTENSION);//$NON-NLS-1$
 
             tempFilePath = tempFile.toString();
 

@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (C) 2005, 2016 Wolfgang Schramm and Contributors
+ * Copyright (C) 2005, 2019 Wolfgang Schramm and Contributors
  *
  * This program is free software; you can redistribute it and/or modify it under
  * the terms of the GNU General Public License as published by the Free Software
@@ -15,13 +15,17 @@
  *******************************************************************************/
 package net.tourbook.tour;
 
+import com.skedgo.converter.TimezoneMapper;
+
 import java.lang.reflect.InvocationTargetException;
 import java.time.ZoneId;
+import java.time.ZonedDateTime;
 import java.util.ArrayList;
 import java.util.Collections;
 
 import net.tourbook.Messages;
 import net.tourbook.application.TourbookPlugin;
+import net.tourbook.common.UI;
 import net.tourbook.common.util.StatusUtil;
 import net.tourbook.common.util.Util;
 import net.tourbook.data.TourData;
@@ -36,228 +40,244 @@ import org.eclipse.jface.wizard.Wizard;
 import org.eclipse.osgi.util.NLS;
 import org.eclipse.swt.widgets.Display;
 
-import com.skedgo.converter.TimezoneMapper;
-
 public class DialogSetTimeZone_Wizard extends Wizard {
 
-	private static final String				LOG_SET_TIMEZONE_001_START_FROM_LIST	= Messages.Log_SetTimeZone_001_Start_FromList;
-	private static final String				LOG_SET_TIMEZONE_001_START_FROM_GEO		= Messages.Log_SetTimeZone_001_Start_FromGeo;
-	private static final String				LOG_SET_TIMEZONE_001_START_REMOVE		= Messages.Log_SetTimeZone_001_Start_Remove;
-	private static final String				LOG_SET_TIMEZONE_002_END				= Messages.Log_SetTimeZone_002_End;
-	private static final String				LOG_SET_TIMEZONE_010_SET_SELECTED		= Messages.Log_SetTimeZone_010_SetSelected;
-	private static final String				LOG_SET_TIMEZONE_011_SET_FROM_GEO		= Messages.Log_SetTimeZone_011_SetFromGeo;
-	private static final String				LOG_SET_TIMEZONE_012_NO_GEO				= Messages.Log_SetTimeZone_012_NoGeo;
-	private static final String				LOG_SET_TIMEZONE_013_REMOVED			= Messages.Log_SetTimeZone_013_Removed;
-	//
+   private static final String LOG_SET_TIMEZONE_001_START_FROM_LIST     = Messages.Log_SetTimeZone_001_Start_FromList;
+   private static final String LOG_SET_TIMEZONE_001_START_FROM_GEO      = Messages.Log_SetTimeZone_001_Start_FromGeo;
+   private static final String LOG_SET_TIMEZONE_001_START_REMOVE        = Messages.Log_SetTimeZone_001_Start_Remove;
+   private static final String LOG_SET_TIMEZONE_001_START_YYMMDD        = Messages.Log_SetTimeZone_001_Start_YYMMDD;
+   private static final String LOG_SET_TIMEZONE_002_END                 = Messages.Log_SetTimeZone_002_End;
+   private static final String LOG_SET_TIMEZONE_010_SET_SELECTED        = Messages.Log_SetTimeZone_010_SetSelected;
+   private static final String LOG_SET_TIMEZONE_011_SET_FROM_GEO        = Messages.Log_SetTimeZone_011_SetFromGeo;
+   private static final String LOG_SET_TIMEZONE_012_NO_GEO              = Messages.Log_SetTimeZone_012_NoGeo;
+   private static final String LOG_SET_TIMEZONE_013_REMOVED             = Messages.Log_SetTimeZone_013_Removed;
+   private static final String LOG_SET_TIMEZONE_014_TOUR_START_ADJUSTED = Messages.Log_SetTimeZone_014_TourStartYYMMDDAdjusted;
+   //
 
-	private final IPreferenceStore			_prefStore								= TourbookPlugin.getPrefStore();
+   private final IPreferenceStore       _prefStore = TourbookPlugin.getPrefStore();
 
-	private DialogSetTimeZone_WizardPage	_wizardPage;
+   private DialogSetTimeZone_WizardPage _wizardPage;
 
-	private ArrayList<TourData>				_selectedTours;
-	private ITourProvider2					_tourProvider;
+   private ArrayList<TourData>          _selectedTours;
+   private ITourProvider2               _tourProvider;
 
-	public DialogSetTimeZone_Wizard(final ArrayList<TourData> selectedTours, final ITourProvider2 tourProvider) {
+   public DialogSetTimeZone_Wizard(final ArrayList<TourData> selectedTours, final ITourProvider2 tourProvider) {
 
-		super();
+      super();
 
-		setNeedsProgressMonitor(true);
+      setNeedsProgressMonitor(true);
 
-		_selectedTours = selectedTours;
-		_tourProvider = tourProvider;
-	}
+      _selectedTours = selectedTours;
+      _tourProvider = tourProvider;
+   }
 
-	@Override
-	public void addPages() {
+   @Override
+   public void addPages() {
 
-		_wizardPage = new DialogSetTimeZone_WizardPage(Messages.Dialog_SetTimeZone_Dialog_Title);
+      _wizardPage = new DialogSetTimeZone_WizardPage(Messages.Dialog_SetTimeZone_Dialog_Title);
 
-		addPage(_wizardPage);
-	}
+      addPage(_wizardPage);
+   }
 
-	@Override
-	public String getWindowTitle() {
-		return Messages.Dialog_SetTimeZone_Dialog_Title;
-	}
+   @Override
+   public String getWindowTitle() {
+      return Messages.Dialog_SetTimeZone_Dialog_Title;
+   }
 
-	@Override
-	public boolean performFinish() {
+   @Override
+   public boolean performFinish() {
 
-		final long start = System.currentTimeMillis();
+      final long start = System.currentTimeMillis();
 
-		TourLogManager.showLogView();
+      TourLogManager.showLogView();
 
-		try {
+      try {
 
-			getContainer().run(true, true, performFinish_getRunnable());
+         getContainer().run(true, true, performFinish_getRunnable());
 
-		} catch (InvocationTargetException | InterruptedException e) {
-			StatusUtil.log(e);
-		}
+      } catch (InvocationTargetException | InterruptedException e) {
+         StatusUtil.log(e);
+      }
 
-		TourLogManager.logDefault(String.format(//
-				LOG_SET_TIMEZONE_002_END,
-				(System.currentTimeMillis() - start) / 1000.0));
+      TourLogManager.logDefault(String.format(//
+            LOG_SET_TIMEZONE_002_END,
+            (System.currentTimeMillis() - start) / 1000.0));
 
-		return true;
-	}
+      return true;
+   }
 
-	private IRunnableWithProgress performFinish_getRunnable() {
+   private IRunnableWithProgress performFinish_getRunnable() {
 
-		_wizardPage.saveState();
+      _wizardPage.saveState();
 
-		final int timeZoneAction = _prefStore.getInt(ITourbookPreferences.DIALOG_SET_TIME_ZONE_ACTION);
-		final String timeZoneId = _prefStore.getString(ITourbookPreferences.DIALOG_SET_TIME_ZONE_SELECTED_ZONE_ID);
-		final ZoneId selectedzoneId = ZoneId.of(timeZoneId);
+      final int timeZoneAction = _prefStore.getInt(ITourbookPreferences.DIALOG_SET_TIME_ZONE_ACTION);
+      final String timeZoneId = _prefStore.getString(ITourbookPreferences.DIALOG_SET_TIME_ZONE_SELECTED_ZONE_ID);
+      final ZoneId selectedzoneId = ZoneId.of(timeZoneId);
 
-		/*
-		 * Create start log message
-		 */
-		String startLogMessage = null;
+      /*
+       * Create start log message
+       */
+      String startLogMessage = UI.EMPTY_STRING;
 
-		switch (timeZoneAction) {
-		case DialogSetTimeZone.TIME_ZONE_ACTION_SET_FROM_GEO_POSITION:
+      switch (timeZoneAction) {
+      case DialogSetTimeZone.TIME_ZONE_ACTION_SET_FROM_GEO_POSITION:
 
-			startLogMessage = NLS.bind(LOG_SET_TIMEZONE_001_START_FROM_GEO, _selectedTours.size());
-			break;
+         startLogMessage = NLS.bind(LOG_SET_TIMEZONE_001_START_FROM_GEO, _selectedTours.size());
+         break;
 
-		case DialogSetTimeZone.TIME_ZONE_ACTION_SET_FROM_LIST:
+      case DialogSetTimeZone.TIME_ZONE_ACTION_SET_FROM_LIST:
 
-			startLogMessage = NLS.bind(LOG_SET_TIMEZONE_001_START_FROM_LIST, timeZoneId, _selectedTours.size());
-			break;
+         startLogMessage = NLS.bind(LOG_SET_TIMEZONE_001_START_FROM_LIST, timeZoneId, _selectedTours.size());
+         break;
 
-		case DialogSetTimeZone.TIME_ZONE_ACTION_REMOVE_TIME_ZONE:
+      case DialogSetTimeZone.TIME_ZONE_ACTION_REMOVE_TIME_ZONE:
 
-			startLogMessage = NLS.bind(LOG_SET_TIMEZONE_001_START_REMOVE, _selectedTours.size());
-			break;
-		}
+         startLogMessage = NLS.bind(LOG_SET_TIMEZONE_001_START_REMOVE, _selectedTours.size());
+         break;
 
-		TourLogManager.addLog(TourLogState.DEFAULT, startLogMessage);
+      case DialogSetTimeZone.TIME_ZONE_ACTION_ADJUST_TOUR_START_YYMMDD:
 
-		final IRunnableWithProgress runnable = new IRunnableWithProgress() {
+         startLogMessage = NLS.bind(LOG_SET_TIMEZONE_001_START_YYMMDD, _selectedTours.size());
+         break;
+      }
 
-			@Override
-			public void run(final IProgressMonitor monitor) throws InvocationTargetException, InterruptedException {
+      TourLogManager.addLog(TourLogState.DEFAULT, startLogMessage);
 
-				monitor.beginTask(Messages.Dialog_SetTimeZone_Label_Progress_Task, _selectedTours.size());
+      final IRunnableWithProgress runnable = new IRunnableWithProgress() {
 
-				// sort tours by date
-				Collections.sort(_selectedTours);
+         @Override
+         public void run(final IProgressMonitor monitor) throws InvocationTargetException, InterruptedException {
 
-				int workedTours = 0;
-				final ArrayList<TourData> savedTours = new ArrayList<TourData>();
+            monitor.beginTask(Messages.Dialog_SetTimeZone_Label_Progress_Task, _selectedTours.size());
 
-				for (final TourData tourData : _selectedTours) {
+            // sort tours by date
+            Collections.sort(_selectedTours);
 
-					if (monitor.isCanceled()) {
-						break;
-					}
+            int workedTours = 0;
+            final ArrayList<TourData> savedTours = new ArrayList<>();
 
-					monitor.worked(1);
-					monitor.subTask(NLS.bind(
-							Messages.Dialog_SetTimeZone_Label_Progress_SubTask,
-							++workedTours,
-							_selectedTours.size()));
+            for (final TourData tourData : _selectedTours) {
 
-					final String tourDateTime = TourManager.getTourDateTimeShort(tourData);
+               if (monitor.isCanceled()) {
+                  break;
+               }
 
-					switch (timeZoneAction) {
+               monitor.worked(1);
+               monitor.subTask(NLS.bind(
+                     Messages.Dialog_SetTimeZone_Label_Progress_SubTask,
+                     ++workedTours,
+                     _selectedTours.size()));
 
-					case DialogSetTimeZone.TIME_ZONE_ACTION_SET_FROM_LIST:
+               final String tourDateTime = TourManager.getTourDateTimeShort(tourData);
 
-						// set time zone which is selected in a list
+               switch (timeZoneAction) {
 
-						tourData.setTimeZoneId(selectedzoneId.getId());
+               case DialogSetTimeZone.TIME_ZONE_ACTION_SET_FROM_LIST:
 
-						TourLogManager.addLog(
-								TourLogState.DEFAULT,
-								NLS.bind(LOG_SET_TIMEZONE_010_SET_SELECTED, tourDateTime));
+                  // set time zone which is selected in a list
 
-						break;
+                  tourData.setTimeZoneId(selectedzoneId.getId());
 
-					case DialogSetTimeZone.TIME_ZONE_ACTION_SET_FROM_GEO_POSITION:
+                  TourLogManager.addLog(
+                        TourLogState.INFO,
+                        NLS.bind(LOG_SET_TIMEZONE_010_SET_SELECTED, tourDateTime));
 
-						// set time zone from the tour geo position
+                  break;
 
-						if (tourData.latitudeSerie != null) {
+               case DialogSetTimeZone.TIME_ZONE_ACTION_SET_FROM_GEO_POSITION:
 
-							// get time zone from lat/lon
-							final double lat = tourData.latitudeSerie[0];
-							final double lon = tourData.longitudeSerie[0];
+                  // set time zone from the tour geo position
 
-							final String rawZoneId = TimezoneMapper.latLngToTimezoneString(lat, lon);
-							final ZoneId zoneId = ZoneId.of(rawZoneId);
+                  if (tourData.latitudeSerie != null) {
 
-							tourData.setTimeZoneId(zoneId.getId());
+                     // get time zone from lat/lon
+                     final double lat = tourData.latitudeSerie[0];
+                     final double lon = tourData.longitudeSerie[0];
 
-							TourLogManager.addLog(
-									TourLogState.DEFAULT,
-									NLS.bind(LOG_SET_TIMEZONE_011_SET_FROM_GEO, zoneId.getId(), tourDateTime));
+                     final String rawZoneId = TimezoneMapper.latLngToTimezoneString(lat, lon);
+                     final ZoneId zoneId = ZoneId.of(rawZoneId);
 
-						} else {
+                     tourData.setTimeZoneId(zoneId.getId());
 
-							TourLogManager.addLog(
-									TourLogState.IMPORT_ERROR,
-									NLS.bind(LOG_SET_TIMEZONE_012_NO_GEO, tourDateTime));
-						}
+                     TourLogManager.addLog(
+                           TourLogState.INFO,
+                           NLS.bind(LOG_SET_TIMEZONE_011_SET_FROM_GEO, zoneId.getId(), tourDateTime));
 
-						break;
+                  } else {
 
-					case DialogSetTimeZone.TIME_ZONE_ACTION_REMOVE_TIME_ZONE:
+                     TourLogManager.addLog(
+                           TourLogState.IMPORT_ERROR,
+                           NLS.bind(LOG_SET_TIMEZONE_012_NO_GEO, tourDateTime));
+                  }
 
-						// remove time zone
+                  break;
 
-						tourData.setTimeZoneId(null);
+               case DialogSetTimeZone.TIME_ZONE_ACTION_REMOVE_TIME_ZONE:
 
-						TourLogManager.addLog(
-								TourLogState.DEFAULT,
-								NLS.bind(LOG_SET_TIMEZONE_013_REMOVED, tourDateTime));
+                  // remove time zone
 
-						break;
+                  tourData.setTimeZoneId(null);
 
-					default:
-						// this should not happen
-						continue;
-					}
+                  TourLogManager.addLog(
+                        TourLogState.INFO,
+                        NLS.bind(LOG_SET_TIMEZONE_013_REMOVED, tourDateTime));
 
-					final TourData savedTourData = TourManager.saveModifiedTour(tourData, false);
+                  break;
 
-					if (savedTourData != null) {
-						savedTours.add(savedTourData);
-					}
-				}
+               case DialogSetTimeZone.TIME_ZONE_ACTION_ADJUST_TOUR_START_YYMMDD:
 
-				// update the UI
-				if (savedTours.size() > 0) {
+                  // adjust tour start yymmdd
 
-					Display.getDefault().asyncExec(new Runnable() {
-						@Override
-						public void run() {
+                  final ZonedDateTime tourStartTime_FromLatLon = tourData.getTourStartTime();
+                  tourData.setTourStartTime_YYMMDD(tourStartTime_FromLatLon);
 
-							Util.clearSelection();
+                  TourLogManager.subLog_Info(NLS.bind(LOG_SET_TIMEZONE_014_TOUR_START_ADJUSTED, tourDateTime));
+                  
+                  break;
 
-							/*
-							 * Ensure the tour data editor contains the correct tour data
-							 */
-							TourData tourDataInEditor = null;
+               default:
+                  // this should not happen
+                  continue;
+               }
 
-							final TourDataEditorView tourDataEditor = TourManager.getTourDataEditor();
-							if (tourDataEditor != null) {
-								tourDataInEditor = tourDataEditor.getTourData();
-							}
+               final TourData savedTourData = TourManager.saveModifiedTour(tourData, false);
 
-							final TourEvent tourEvent = new TourEvent(savedTours);
-							tourEvent.tourDataEditorSavedTour = tourDataInEditor;
-							TourManager.fireEvent(TourEventId.TOUR_CHANGED, tourEvent);
+               if (savedTourData != null) {
+                  savedTours.add(savedTourData);
+               }
+            }
 
-							// do a reselection of the selected tours to fire the multi tour data selection
-							_tourProvider.toursAreModified(savedTours);
-						}
-					});
-				}
-			}
-		};
+            // update the UI
+            if (savedTours.size() > 0) {
 
-		return runnable;
-	}
+               Display.getDefault().asyncExec(new Runnable() {
+                  @Override
+                  public void run() {
+
+                     Util.clearSelection();
+
+                     /*
+                      * Ensure the tour data editor contains the correct tour data
+                      */
+                     TourData tourDataInEditor = null;
+
+                     final TourDataEditorView tourDataEditor = TourManager.getTourDataEditor();
+                     if (tourDataEditor != null) {
+                        tourDataInEditor = tourDataEditor.getTourData();
+                     }
+
+                     final TourEvent tourEvent = new TourEvent(savedTours);
+                     tourEvent.tourDataEditorSavedTour = tourDataInEditor;
+                     TourManager.fireEvent(TourEventId.TOUR_CHANGED, tourEvent);
+
+                     // do a reselection of the selected tours to fire the multi tour data selection
+                     _tourProvider.toursAreModified(savedTours);
+                  }
+               });
+            }
+         }
+      };
+
+      return runnable;
+   }
 }

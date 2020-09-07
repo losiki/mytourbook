@@ -1,0 +1,27 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+	<modelVersion>4.0.0</modelVersion>
+	<artifactId>mytourbook-nls</artifactId>
+	<parent>
+		<groupId>net.tourbook</groupId>
+		<artifactId>mytourbook-parent</artifactId>
+		<version>20.8.0-SNAPSHOT</version>
+		<relativePath>../pom-tycho.xml</relativePath>
+	</parent>
+	<packaging>pom</packaging>
+
+	<modules>
+		<module>net.tourbook.chart.nl/pom-tycho.xml</module>
+		<module>net.tourbook.cloud.nl/pom-tycho.xml</module>
+		<module>net.tourbook.common.nl/pom-tycho.xml</module>
+		<module>net.tourbook.device.garmin.fit.nl/pom-tycho.xml</module>
+		<module>net.tourbook.device.garmin.nl/pom-tycho.xml</module>
+		<module>net.tourbook.device.nl/pom-tycho.xml</module>
+		<module>net.tourbook.device.nmea.nl/pom-tycho.xml</module>
+		<module>net.tourbook.nl/pom-tycho.xml</module>
+		<module>net.tourbook.photo.nl/pom-tycho.xml</module>
+		<module>net.tourbook.printing.nl/pom-tycho.xml</module>
+		<module>net.tourbook.statistics.nl/pom-tycho.xml</module>
+		<module>net.tourbook.web.nl/pom-tycho.xml</module>
+	</modules>
+</project>

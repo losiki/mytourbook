@@ -33,6 +33,13 @@
       <import plugin="org.eclipse.ui"/>
       <import plugin="org.eclipse.ui.views.log"/>
       <import plugin="org.eclipse.core.runtime"/>
+      <import plugin="org.eclipse.equinox.p2.artifact.repository"/>
+      <import plugin="org.eclipse.equinox.p2.director"/>
+      <import plugin="org.eclipse.equinox.p2.garbagecollector"/>
+      <import plugin="org.eclipse.equinox.p2.operations"/>
+      <import plugin="org.eclipse.equinox.p2.touchpoint.eclipse"/>
+      <import plugin="org.eclipse.equinox.p2.transport.ecf"/>
+      <import plugin="org.eclipse.equinox.p2.ui"/>
    </requires>
 
    <plugin

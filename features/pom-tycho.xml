@@ -1,0 +1,27 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+	<modelVersion>4.0.0</modelVersion>
+	<artifactId>mytourbook-features</artifactId>
+	<parent>
+		<groupId>net.tourbook</groupId>
+		<artifactId>mytourbook-parent</artifactId>
+		<version>20.8.0-SNAPSHOT</version>
+		<relativePath>../pom-tycho.xml</relativePath>
+	</parent>
+	<packaging>pom</packaging>
+
+	<modules>
+		<module>feature.net.tourbook.app.version/pom-tycho.xml</module>
+		<module>feature.net.tourbook.app/pom-tycho.xml</module>
+		<module>feature.net.tourbook.app.nl/pom-tycho.xml</module>
+		<module>feature.net.tourbook.ext.derby/pom-tycho.xml</module>
+		<module>feature.net.tourbook.ext.eclipse/pom-tycho.xml</module>
+		<module>feature.net.tourbook.ext.eclipse.nl/pom-tycho.xml</module>
+		<module>feature.net.tourbook.ext.ejb3/pom-tycho.xml</module>
+		<module>feature.net.tourbook.ext.jars/pom-tycho.xml</module>
+		<module>feature.net.tourbook.ext.rxtx/pom-tycho.xml</module>
+		<module>feature.net.tourbook.ext.vtm/pom-tycho.xml</module>
+		<module>feature.net.tourbook.ext.worldwind/pom-tycho.xml</module>
+	</modules>
+</project>

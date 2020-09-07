@@ -1,0 +1,48 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+	<modelVersion>4.0.0</modelVersion>
+	<artifactId>mytourbook-bundles</artifactId>
+	<parent>
+		<groupId>net.tourbook</groupId>
+		<artifactId>mytourbook-parent</artifactId>
+		<version>20.8.0-SNAPSHOT</version>
+		<relativePath>../pom-tycho.xml</relativePath>
+	</parent>
+	<packaging>pom</packaging>
+
+	<modules>
+		<module>net.tourbook.ext.geoclipse/pom-tycho.xml</module>
+		<module>net.tourbook.ext.jars/pom-tycho.xml</module>
+		<module>net.tourbook.ext.worldwind/pom-tycho.xml</module>
+		<module>net.tourbook.ext.worldwind.linux64/pom-tycho.xml</module>
+		<module>net.tourbook.ext.worldwind.macosx/pom-tycho.xml</module>
+		<module>net.tourbook.ext.worldwind.win64/pom-tycho.xml</module>
+		<module>net.tourbook.common/pom-tycho.xml</module>
+		<module>net.tourbook.ext.apache/pom-tycho.xml</module>
+		<module>net.tourbook.ext.jars.printing/pom-tycho.xml</module>
+		<module>net.tourbook.ext.ejb3_3.4.0/pom-tycho.xml</module>
+		<module>net.tourbook.ext.rxtx_2.2/pom-tycho.xml</module>
+		<module>net.tourbook.ext.rxtx.linux64_2.2/pom-tycho.xml</module>
+		<module>net.tourbook.ext.rxtx.macosx_2.2/pom-tycho.xml</module>
+		<module>net.tourbook.ext.rxtx.win64_2.2/pom-tycho.xml</module>
+		<module>net.tourbook.p2/pom-tycho.xml</module>
+		<module>net.tourbook.web/pom-tycho.xml</module>
+		<module>net.tourbook.ext.vtm/pom-tycho.xml</module>
+		<module>net.tourbook.ext.vtm.linux/pom-tycho.xml</module>
+		<module>net.tourbook.ext.vtm.macosx/pom-tycho.xml</module>
+		<module>net.tourbook.ext.vtm.windows/pom-tycho.xml</module>
+		<module>net.tourbook.chart/pom-tycho.xml</module>
+		<module>net.tourbook.photo/pom-tycho.xml</module>
+		<module>net.tourbook/pom-tycho.xml</module>
+		<module>net.tourbook.device/pom-tycho.xml</module>
+		<module>net.tourbook.ext.velocity/pom-tycho.xml</module>
+		<module>net.tourbook.cloud/pom-tycho.xml</module>
+		<module>net.tourbook.export/pom-tycho.xml</module>
+		<module>net.tourbook.printing/pom-tycho.xml</module>
+		<module>net.tourbook.device.garmin/pom-tycho.xml</module>
+		<module>net.tourbook.device.garmin.fit/pom-tycho.xml</module>
+		<module>net.tourbook.device.nmea/pom-tycho.xml</module>
+		<module>net.tourbook.statistics/pom-tycho.xml</module>
+		<module>net.tourbook.branding/pom-tycho.xml</module>
+	</modules>
+</project>
